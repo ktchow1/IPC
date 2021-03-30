@@ -1,14 +1,17 @@
 #include<iostream>
 #include<string>
-#include<sys/socket.h>   // socket
-#include<arpa/inet.h>    // inet_addr
-#include<unistd.h>       // read & write
-
+#include<sys/socket.h> 
+#include<arpa/inet.h> 
+#include<unistd.h> // read & write
 
 class tcp_session
 {
 public:
     tcp_session(int fd_) : fd(fd_) {}
+   ~tcp_session() 
+    {
+        if (fd > 0) ::close(fd);
+    }
 
 public:
     bool run()
@@ -77,6 +80,12 @@ public:
         ::listen(fd,3);
     }
 
+   ~tcp_server() 
+    {
+        if (fd > 0) ::close(fd);
+    }
+
+public:
     tcp_session accept()
     {
         sockaddr_in client_addr;

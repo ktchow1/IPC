@@ -1,44 +1,79 @@
 #include<iostream>
 #include<string>
-#include<string.h> //memset
-#include<stdlib.h> //exit(0);
-#include<arpa/inet.h>
 #include<sys/socket.h>
+#include<arpa/inet.h>
+#include<unistd.h> // read & write
 
-#define SERVER "127.0.0.1"
-
-int test_udp_client()
+class udp_client
 {
+public:
+    // Step 1 : Create socket
+    udp_client(const std::string& ip, std::uint16_t port) : fd(socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))
+    {
+        if (fd == -1)
+        {
+            throw std::runtime_error("[UDP client] Cannot create socket");
+        }
+
+        addr_server.sin_family = AF_INET;
+        addr_server.sin_port   = htons(port);
+        inet_aton(ip.c_str(), &addr_server.sin_addr);
+    }
+    
+   ~udp_client()
+    {
+        if (fd > 0) ::close(fd);
+    }
+
+public:
+    bool run()
+    {
+        socklen_t socket_len = sizeof(sockaddr_in);
+        while(true)
+        {
+            std::cout << "\n[UDP client] Enter message : " << std::flush;
+            std::string message;
+            std::cin >> message;
+
+            // ************* //
+            // *** WRITE *** //
+            // ************* //
+            if (sendto(fd, message.c_str(), message.size(), 0, (struct sockaddr*)&addr_server, socket_len) < 0)
+            {
+                throw std::runtime_error("[UDP client] Cannot send");
+            }
+
+            // ************ //
+            // *** READ *** //
+            // ************ //
+            int read_size = ::recvfrom(fd, buf, size, 0, (struct sockaddr*)&addr_server, &socket_len);
+            if (read_size > 0)
+            {
+                std::cout << "[UDP client] Received : " << std::string{buf, (size_t)read_size};
+            }
+            else if (read_size)
+            {
+                std::cout << "[UDP client] Disconnected" << std::flush;
+                return true;
+            }
+            else
+            {
+                std::cout << "[UDP client] Read-failure" << std::flush;
+                return false;
+            }
+        }
+        close(fd);
+        return true;
+    }
+
+private:
     static const std::uint32_t size = 4096;
     static const std::uint16_t port = 12345;
 
-    // step 1. create socket
-    int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (fd == -1)
-    {
-        throw std::runtime_error("cannot create socket");
-    }
+private:
+    int fd;
+    char buf[size];
 
-    std::string ip = "127.0.0.1";
-    struct sockaddr_in addr_server;
-    addr_server.sin_family = AF_INET;
-    addr_server.sin_port = htons(port);
-    inet_aton(ip.c_str(), &addr_server.sin_addr);
-    socklen_t socket_len = sizeof(addr_server);
-
-    // No connect for UDP, start to read / write ...
-    while(true)
-    {
-        std::cout << "\nEnter message : " << std::flush;
-        std::string message;
-        std::cin >> message;
-
-        sendto(fd, message.c_str(), message.size(), 0, (struct sockaddr*)&addr_server, socket_len);
-
-        char buf[size];
-        int read_size = recvfrom(fd, buf, size, 0, (struct sockaddr*)&addr_server, &socket_len);
-        std::cout << "data from server : " << std::string{buf, (size_t)read_size};
-    }
-    close(fd);
-    return 0;
-}
+    // Unlike TCP, there is no connection in UDP, we need to keep the address ...
+    sockaddr_in addr_server;
+};

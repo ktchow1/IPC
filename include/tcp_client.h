@@ -7,10 +7,9 @@
 class tcp_client
 {
 public:
-    void connect(const std::string& ip, std::uint16_t port)
+    // Step 1 : Create socket
+    tcp_client(const std::string& ip, std::uint16_t port) : fd(::socket(AF_INET, SOCK_STREAM, 0))
     {
-        // Step 1 : Create socket
-        fd = ::socket(AF_INET, SOCK_STREAM, 0);
         if (fd == -1)
         {
             throw std::runtime_error("[TCP client] Cannot create socket");
@@ -29,9 +28,14 @@ public:
         std::cout << "\n[TCP client] Connection done" << std::flush;
     }
 
+   ~tcp_client()
+    {
+        if (fd > 0) ::close(fd);
+    }
+
+public:
     bool run()
     {
-        char message[1000] , server_reply[2000];
         while(true)
         {
             std::cout << "\n[TCP client] Enter message : " << std::flush;
