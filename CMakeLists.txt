@@ -70,11 +70,8 @@ target_link_libraries(Test -L~/dev/pgsql/lib)
 target_link_libraries(Test -lstdc++fs) # filesystem lib
 target_link_libraries(Test -ldl) # dynamically loaded lib, for boost::stacktrace's dladdr()
 target_link_libraries(Test -lrt) # realtime extension lib, for shm_open()
-target_link_libraries(Test -lpq) # psql API
 target_link_libraries(Test -lgtest)
 target_link_libraries(Test -lpthread)
-target_link_libraries(Test "/home/ktchow1/dev/yaml-cpp/build/debug/libyaml-cppd.a") 
-target_link_libraries(Test "/home/ktchow1/dev/reckless/build/debug/libreckless.a") 
 
 # target_link_libraries(Test -lyaml-cppd) # Does not work, why?
 # This problem happens in both my home machine and office machine, 
