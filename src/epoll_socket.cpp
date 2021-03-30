@@ -16,24 +16,26 @@ int create_and_bind(std::uint16_t port)
     addrinfo hints;
     addrinfo *result;
 
-    // Step 1a. initial address hints
+    // *** Step A : Initial address hints *** //
     memset(&hints, 0, sizeof(addrinfo));
     hints.ai_socktype = SOCK_STREAM; // request TCP socket
     hints.ai_family   = AF_UNSPEC;   // request both IPv4 and IPv6
     hints.ai_flags    = AI_PASSIVE;
 
-    // Step 1b. get address results
+    // *** Step B : Get address results *** //
     std::string port_str = std::to_string(port);
     if (auto status = getaddrinfo(NULL, port_str.c_str(), &hints, &result) != 0) return -1;
 
-    // Step 1c. iterate address results
+    // *** Step C : Iterate address results *** //
     for(const auto* result_ptr = result; result_ptr!=NULL; result_ptr = result_ptr->ai_next)
     {
+        // *** Step 1 : Create socket *** //
         int fd = socket(result_ptr->ai_family,
                         result_ptr->ai_socktype,
                         result_ptr->ai_protocol);
-
         if (fd == -1) continue;
+
+        // *** Step 2 : Bind socket *** //
         if (bind(fd, result_ptr->ai_addr,
                      result_ptr->ai_addrlen) == 0)
         {
@@ -47,9 +49,7 @@ int create_and_bind(std::uint16_t port)
     return -1;
 }
 
-// ************** //
-// *** Step 2 *** //
-// ************** //
+// *** Step D : Non blocking *** //
 int set_socket_non_blocking(int fd)
 {
     // Get flags
@@ -62,15 +62,12 @@ int set_socket_non_blocking(int fd)
     return 0;
 }
 
-// **************** //
-// *** Step 1-3 *** //
-// **************** //
 int create_passive_socket(std::uint16_t port)
 {
     int FD_passive = create_and_bind(port);
     if (FD_passive == -1)                          return -1;
     if (set_socket_non_blocking(FD_passive) == -1) return -1;
-    if (listen(FD_passive, SOMAXCONN) == -1)       return -1;
+    if (listen(FD_passive, SOMAXCONN) == -1)       return -1; // *** Step 3 *** //
 
     return FD_passive;
 }
@@ -155,7 +152,7 @@ void test_epoll_socket(std::uint16_t port)
                 sockaddr sock_addr;
                 socklen_t sock_len = sizeof(sock_addr);
 
-                int FD_active = accept(FD_passive, &sock_addr, &sock_len);
+                int FD_active = accept(FD_passive, &sock_addr, &sock_len); // *** Step 4 *** //
                 if (FD_active == -1)
                 {
                     std::cout << "\nError in acceptng new connection, next event ... ";
